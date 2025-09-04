@@ -3,77 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Form in LIFF</title>
+    <title>Feedback Form</title>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
-        }
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; background-color: #f4f4f4; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input[type="text"], textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #00B900; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
+        button:disabled { background-color: #999; }
+        #status-message { text-align: center; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div id="loading-message">กำลังโหลดข้อมูลผู้ใช้...</div>
-    <iframe id="google-form" src="" style="display:none;"></iframe>
+    <div class="container">
+        <h2>แบบฟอร์มข้อเสนอแนะ</h2>
+        <form id="feedback-form">
+            <div class="form-group">
+                <label for="userName">ชื่อของคุณ:</label>
+                <input type="text" id="userName" name="userName" required>
+            </div>
+            <div class="form-group">
+                <label for="feedback">ข้อเสนอแนะ:</label>
+                <textarea id="feedback" name="feedback" rows="4" required></textarea>
+            </div>
+            <button type="submit" id="submit-button">ส่งข้อมูล</button>
+        </form>
+        <div id="status-message"></div>
+    </div>
 
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
+        const LIFF_ID = "2008056238-g8p1R13n";
+        // << วาง URL ของ Web App ที่คัดลอกมา
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwfoBpRTvwogXk213N_WtC0T_2Nv_qbXsmSaNKShCJELykUEZxDnuHf0B8StyHyZR5W/exec"; 
+        
         async function main() {
-            // ส่วนนี้เป็นโค้ดเสริมเพื่อแก้ปัญหา Cache ของ LIFF ในบางกรณี สามารถคงไว้ได้
-            const originalFetch = window.fetch;
-            window.fetch = async function(url, options) {
-                if (url.toString().startsWith('https://liffsdk.line-scdn.net/') && url.toString().endsWith('.json')) {
-                    url = url + '?ts=' + Math.random();
-                }
-                return originalFetch(url, options);
-            };
-
-            // --------------------------------------------------------------
-            // 1. ค่าที่ต้องแก้ไข (ตรวจสอบให้แน่ใจว่าถูกต้อง)
-            const liffId = "2008056238-g8p1R13n";
-            // ✅ **แก้ไข:** ลบพารามิเตอร์ท้าย URL ออก ให้เหลือแค่ URL หลัก
-            const formBaseUrl = "https://docs.google.com/forms/d/e/1FAIpQLSffZez6krk1nl-bGWIfn6xGExspTfC4ZAdU4kbuVg4iPFGNzQ/viewform";
-            const userIdEntry = "entry.718859599";
-            // --------------------------------------------------------------
-
             try {
-                // 2. เริ่มต้น LIFF
-                await liff.init({ liffId: liffId });
-
+                await liff.init({ liffId: LIFF_ID });
                 if (!liff.isLoggedIn()) {
                     liff.login();
                     return;
                 }
 
-                // 3. ดึงโปรไฟล์ผู้ใช้เพื่อเอา userId
                 const profile = await liff.getProfile();
                 const userId = profile.userId;
 
-                // 4. ✅ **แก้ไข:** สร้าง URL ที่ถูกต้องในขั้นตอนเดียว
-                // ใช้ '?' สำหรับพารามิเตอร์ตัวแรก (embedded=true)
-                // และใช้ '&' สำหรับพารามิเตอร์ตัวถัดไป (entry.xxx=userId)
-                const finalUrl = `${formBaseUrl}?embedded=true&${userIdEntry}=${userId}`;
+                // เมื่อฟอร์มถูกส่ง
+                document.getElementById('feedback-form').addEventListener('submit', async (e) => {
+                    e.preventDefault(); // ป้องกันไม่ให้หน้าเว็บรีโหลด
 
-                // 5. แสดงฟอร์มและซ่อนข้อความ Loading
-                const iframe = document.getElementById('google-form');
-                const loadingMessage = document.getElementById('loading-message');
-                
-                iframe.src = finalUrl;
-                iframe.style.display = 'block';
-                loadingMessage.style.display = 'none';
+                    const submitButton = document.getElementById('submit-button');
+                    const statusMessage = document.getElementById('status-message');
+
+                    // 1. แสดงสถานะและปิดปุ่ม
+                    submitButton.disabled = true;
+                    submitButton.innerText = 'กำลังส่ง...';
+                    statusMessage.innerText = '';
+
+                    // 2. รวบรวมข้อมูลจากฟอร์ม
+                    const formData = {
+                        userId: userId,
+                        userName: document.getElementById('userName').value,
+                        feedback: document.getElementById('feedback').value,
+                    };
+
+                    // 3. ส่งข้อมูลไปที่ Google Apps Script Web App
+                    const response = await fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(formData),
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+
+                    const result = await response.json();
+
+                    // 4. จัดการผลลัพธ์ที่ได้กลับมา
+                    if (result.status === 'success') {
+                        statusMessage.innerText = 'ส่งข้อมูลสำเร็จ ขอบคุณค่ะ!';
+                        statusMessage.style.color = 'green';
+                        submitButton.innerText = 'ส่งสำเร็จ!';
+                        // รอ 2 วินาทีแล้วปิดหน้าต่าง LIFF
+                        setTimeout(() => liff.closeWindow(), 2000); 
+                    } else {
+                        throw new Error(result.message);
+                    }
+                });
 
             } catch (error) {
-                // หากเกิดข้อผิดพลาด ให้แสดงบนหน้าจอ
-                document.getElementById('loading-message').innerText = "เกิดข้อผิดพลาด: " + error;
+                document.getElementById('status-message').innerText = 'เกิดข้อผิดพลาด: ' + error.message;
+                document.getElementById('status-message').style.color = 'red';
+                document.getElementById('submit-button').disabled = false;
+                document.getElementById('submit-button').innerText = 'ลองอีกครั้ง';
             }
         }
-
         main();
     </script>
 </body>
