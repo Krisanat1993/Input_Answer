@@ -1,31 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Google Form in LIFF</title>
-<style>
-body, html {
-margin: 0;
-padding: 0;
-height: 100%;
-overflow: hidden;
-}
-iframe {
-width: 100%;
-height: 100%;
-border: none;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Form in LIFF</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
 </head>
 <body>
-    <iframe id="google-form" src=""></iframe>
     <div id="loading-message">กำลังโหลดข้อมูลผู้ใช้...</div>
     <iframe id="google-form" src="" style="display:none;"></iframe>
 
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<script>
-async function main() {
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script>
+        async function main() {
             // ส่วนนี้เป็นโค้ดเสริมเพื่อแก้ปัญหา Cache ของ LIFF ในบางกรณี สามารถคงไว้ได้
             const originalFetch = window.fetch;
             window.fetch = async function(url, options) {
@@ -35,23 +34,6 @@ async function main() {
                 return originalFetch(url, options);
             };
 
-              // =================================================================
-        // โค้ดที่เพิ่มเข้ามาเพื่อแก้ไขปัญหา Cache ของ LIFF
-        // =================================================================
-        const originalFetch = window.fetch;
-        window.fetch = async function(url, options) {
-            if (url.toString().startsWith('https://liffsdk.line-scdn.net/') && url.toString().endsWith('.json')) {
-                url = url + '?ts=' + Math.random();
-            }
-            return originalFetch(url, options);
-        };
-        // =================================================================
-          // --------------------------------------------------------------
-            // 1. ค่าที่ต้องแก้ไข
-            const liffId = "2008056238-g8p1R13n"; // ใส่ LIFF ID ของคุณ
-            const formBaseUrl = "https://docs.google.com/forms/d/e/1FAIpQLSffZez6krk1nl-bGWIfn6xGExspTfC4ZAdU4kbuVg4iPFGNzQ/viewform?usp=pp_url&"; // ใส่ URL ของฟอร์ม (ส่วนหน้า)
-            const userIdEntry = "entry.718859599"; // ใส่ entry ID ที่จดไว้
-          // --------------------------------------------------------------
             // --------------------------------------------------------------
             // 1. ค่าที่ต้องแก้ไข (ตรวจสอบให้แน่ใจว่าถูกต้อง)
             const liffId = "2008056238-g8p1R13n";
@@ -60,17 +42,10 @@ async function main() {
             const userIdEntry = "entry.718859599";
             // --------------------------------------------------------------
 
-          
-            // 2. เริ่มต้น LIFF
-            await liff.init({ liffId: liffId });
             try {
                 // 2. เริ่มต้น LIFF
                 await liff.init({ liffId: liffId });
 
-            if (!liff.isLoggedIn()) {
-                liff.login();
-                return;
-            }
                 if (!liff.isLoggedIn()) {
                     liff.login();
                     return;
@@ -80,20 +55,11 @@ async function main() {
                 const profile = await liff.getProfile();
                 const userId = profile.userId;
 
-            // 3. ดึงโปรไฟล์ผู้ใช้เพื่อเอา userId
-            const profile = await liff.getProfile();
-            const userId = profile.userId;
                 // 4. ✅ **แก้ไข:** สร้าง URL ที่ถูกต้องในขั้นตอนเดียว
                 // ใช้ '?' สำหรับพารามิเตอร์ตัวแรก (embedded=true)
                 // และใช้ '&' สำหรับพารามิเตอร์ตัวถัดไป (entry.xxx=userId)
                 const finalUrl = `${formBaseUrl}?embedded=true&${userIdEntry}=${userId}`;
 
-            // 4. สร้าง URL ของ Google Form พร้อมฝัง userId
-            const prefillUrl = `${formBaseUrl}?${userIdEntry}=${userId}`;
-            
-            // 5. ซ่อนฟิลด์ userId และฝังฟอร์มลงใน iframe
-            const finalUrl = prefillUrl.replace("/viewform", "/viewform?embedded=true");
-            document.getElementById('google-form').src = finalUrl;
                 // 5. แสดงฟอร์มและซ่อนข้อความ Loading
                 const iframe = document.getElementById('google-form');
                 const loadingMessage = document.getElementById('loading-message');
@@ -106,6 +72,9 @@ async function main() {
                 // หากเกิดข้อผิดพลาด ให้แสดงบนหน้าจอ
                 document.getElementById('loading-message').innerText = "เกิดข้อผิดพลาด: " + error;
             }
-}
+        }
 
-main();
+        main();
+    </script>
+</body>
+</html>
