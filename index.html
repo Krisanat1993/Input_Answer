@@ -24,6 +24,18 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
         async function main() {
+
+              // =================================================================
+        // โค้ดที่เพิ่มเข้ามาเพื่อแก้ไขปัญหา Cache ของ LIFF
+        // =================================================================
+        const originalFetch = window.fetch;
+        window.fetch = async function(url, options) {
+            if (url.toString().startsWith('https://liffsdk.line-scdn.net/') && url.toString().endsWith('.json')) {
+                url = url + '?ts=' + Math.random();
+            }
+            return originalFetch(url, options);
+        };
+        // =================================================================
           // --------------------------------------------------------------
             // 1. ค่าที่ต้องแก้ไข
             const liffId = "2008056238-g8p1R13n"; // ใส่ LIFF ID ของคุณ
