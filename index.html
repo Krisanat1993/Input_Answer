@@ -103,6 +103,10 @@
             text-align: center;
             font-family: 'Sarabun', sans-serif;
         }
+        .btn:disabled {
+            background-color: #9CA3AF;
+            cursor: not-allowed;
+        }
         .btn-primary {
             background: #3B82F6;
             color: white;
@@ -116,7 +120,7 @@
             background: #16A34A;
             color: white;
         }
-        .btn-success:hover {
+        .btn-success:hover:not(:disabled) {
             background: #15803D;
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
@@ -262,7 +266,7 @@
                     <div class="form-group"><label id="question4-label" for="answer4" class="form-label"></label><textarea id="answer4" class="textarea" placeholder="กรอกคำตอบของคุณที่นี่..."></textarea></div>
                     <div class="form-group"><label id="question5-label" for="answer5" class="form-label"></label><textarea id="answer5" class="textarea" placeholder="กรอกคำตอบของคุณที่นี่..."></textarea></div>
 
-                    <button type="submit" class="btn btn-success">ส่งคำตอบ</button>
+                    <button type="submit" id="submitButton" class="btn btn-success">ส่งคำตอบ</button>
                 </div>
             </form>
         </div>
@@ -280,9 +284,11 @@
             const errorMessage = document.getElementById('errorMessage');
             const loader = document.getElementById('loader');
             const participantSection = document.getElementById('participantSection');
+            const submitButton = document.getElementById('submitButton');
 
             // --- LIFF & Data ---
             const LIFF_ID = '2008056238-g8p1R13n'; // LIFF ID ของคุณ
+            const GAS_URL = 'https://script.google.com/macros/s/AKfycbyQb0e2Or6JlgROReyqLeCoh41s9fvTYq4UK-aK8znA0-18RaA4O2tSLGcS59AoKlYcjQ/exec';
             let lineUserId = ''; // ตัวแปรสำหรับเก็บ User ID (UUID)
             const SHEET_ID = '1Z6gOqbIsXFHnX0BC-AatHfG44LkMUVN-foktbeiSJvg';
             const SHEET_GID = '0';
@@ -384,69 +390,116 @@
             // --- Form Submission Logic ---
             form.addEventListener('submit', async function(event) {
                 event.preventDefault();
+                submitButton.disabled = true;
+                submitButton.textContent = 'กำลังส่ง...';
 
+                // --- 1. Gather Data for Submission ---
                 const selectedOption = participantDropdown.options[participantDropdown.selectedIndex];
                 const participantName = selectedOption ? selectedOption.textContent : 'ไม่ระบุ';
+                const lesson = document.getElementById('problem-lesson').textContent;
                 
+                const questions = {
+                    q1: document.getElementById('question1-label').textContent,
+                    q2: document.getElementById('question2-label').textContent,
+                    q3: document.getElementById('question3-label').textContent,
+                    q4: document.getElementById('question4-label').textContent,
+                    q5: document.getElementById('question5-label').textContent,
+                };
+
                 const answers = {
-                    q1: document.getElementById('answer1').value.trim() || '-',
-                    q2: document.getElementById('answer2').value.trim() || '-',
-                    q3: document.getElementById('answer3').value.trim() || '-',
-                    q4: document.getElementById('answer4').value.trim() || '-',
-                    q5: document.getElementById('answer5').value.trim() || '-',
+                    a1: document.getElementById('answer1').value.trim() || '-',
+                    a2: document.getElementById('answer2').value.trim() || '-',
+                    a3: document.getElementById('answer3').value.trim() || '-',
+                    a4: document.getElementById('answer4').value.trim() || '-',
+                    a5: document.getElementById('answer5').value.trim() || '-',
                 };
                 
+                // --- 2. Send data to Google Apps Script ---
+                try {
+                    const formData = new FormData();
+                    formData.append('timestamp', new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }));
+                    formData.append('lineUserId', lineUserId);
+                    formData.append('participant', participantName);
+                    formData.append('lesson', lesson);
+                    formData.append('q1', questions.q1); formData.append('a1', answers.a1);
+                    formData.append('q2', questions.q2); formData.append('a2', answers.a2);
+                    formData.append('q3', questions.q3); formData.append('a3', answers.a3);
+                    formData.append('q4', questions.q4); formData.append('a4', answers.a4);
+                    formData.append('q5', questions.q5); formData.append('a5', answers.a5);
+
+                    const response = await fetch(GAS_URL, {
+                        method: 'POST',
+                        body: formData,
+                    });
+                    const result = await response.json();
+
+                    if (result.result !== 'success') {
+                         throw new Error('Failed to save data to Google Sheet.');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error sending data to Google Sheet:', error);
+                    alert('เกิดข้อผิดพลาดในการบันทึกข้อมูลลง Google Sheet โปรดลองอีกครั้ง');
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'ส่งคำตอบ';
+                    return; // Stop execution if saving fails
+                }
+
+                // --- 3. Send message via LIFF ---
                 const summaryMessage = `📝 สรุปผลการตอบแบบสอบถาม
 -------------------------
 ผู้ตอบ: ${participantName}
 User ID: ${lineUserId}
-คำถามชุดที่: ${document.getElementById('problem-lesson').textContent}
+คำถามชุดที่: ${lesson}
 -------------------------
-1. ${document.getElementById('question1-label').textContent}
-คำตอบ: ${answers.q1}
+1. ${questions.q1}
+คำตอบ: ${answers.a1}
 
-2. ${document.getElementById('question2-label').textContent}
-คำตอบ: ${answers.q2}
+2. ${questions.q2}
+คำตอบ: ${answers.a2}
 
-3. ${document.getElementById('question3-label').textContent}
-คำตอบ: ${answers.q3}
+3. ${questions.q3}
+คำตอบ: ${answers.a3}
 
-4. ${document.getElementById('question4-label').textContent}
-คำตอบ: ${answers.q4}
+4. ${questions.q4}
+คำตอบ: ${answers.a4}
 
-5. ${document.getElementById('question5-label').textContent}
-คำตอบ: ${answers.q5}
+5. ${questions.q5}
+คำตอบ: ${answers.a5}
 -------------------------
 ขอบคุณที่ร่วมตอบแบบสอบถาม`;
 
                 try {
-                    // NEW: ตรวจสอบว่าเปิดในแอป LINE หรือเบราว์เซอร์ภายนอก
                     if (liff.isInClient()) {
-                        // ถ้าอยู่ในแอป LINE: ส่งข้อความกลับไปที่แชทเดิมและปิด LIFF
                         await liff.sendMessages([{ type: 'text', text: summaryMessage }]);
                         liff.closeWindow();
                     } else {
-                        // ถ้าอยู่ในเบราว์เซอร์: ใช้ Share Target Picker ให้ผู้ใช้เลือกแชทที่จะส่ง
                         if (liff.isApiAvailable('shareTargetPicker')) {
                             await liff.shareTargetPicker([{ type: 'text', text: summaryMessage }]);
                             alert('ส่งข้อมูลสำเร็จ! กรุณาตรวจสอบข้อความที่คุณแชร์ใน LINE');
+                            // Optional: reset form after successful share
+                            form.reset();
+                            participantDropdown.selectedIndex = 0;
+                            page2.classList.remove('active');
+                            page1.classList.add('active');
+                            submitButton.disabled = false;
+                            submitButton.textContent = 'ส่งคำตอบ';
+
                         } else {
-                            // Fallback กรณีที่ browser ไม่รองรับ shareTargetPicker
                             alert('เบราว์เซอร์ของคุณไม่รองรับฟีเจอร์นี้ โปรดคัดลอกข้อความและส่งด้วยตนเอง');
-                            console.log(summaryMessage);
                         }
                     }
                 } catch (error) {
                     console.error('Error sending or sharing message:', error);
-                    // ตรวจสอบ error code '8' หมายถึงผู้ใช้กดยกเลิกหน้าต่าง share
-                    if (error.code !== 8) {
+                    if (error.code !== 8) { // 8 is user cancel code for shareTargetPicker
                         alert('เกิดข้อผิดพลาดในการส่งข้อความกลับไปยัง LINE');
                     }
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'ส่งคำตอบ';
                 }
             });
         }
 
-        // เรียกใช้ฟังก์ชันหลักเมื่อหน้าเว็บโหลดเสร็จ
         document.addEventListener('DOMContentLoaded', main);
     </script>
 </body>
