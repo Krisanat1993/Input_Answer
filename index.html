@@ -247,7 +247,6 @@
                     <button type="button" id="backButton" class="btn btn-back">← กลับ</button>
                     <div class="problem-statement">
                         <h3>โจทย์ปัญหา</h3>
-                        <!-- FIX 1: Added h4 element for the lesson/problem set -->
                         <h4 id="problem-lesson" style="font-weight: 500; margin-bottom: 1rem; color: #374151;"></h4>
                         <p id="problem-description"></p>
                         <div class="image-gallery">
@@ -305,7 +304,7 @@
                 return;
             }
 
-            // --- Helper Function for Google Drive Links (UPDATED) ---
+            // --- Helper Function for Google Drive Links ---
             function convertGoogleDriveLink(url) {
                 if (!url || !url.includes('drive.google.com')) { return 'https://placehold.co/800x400/ccc/333?text=Image+Not+Found'; }
                 const match = url.match(/drive\.google\.com.*[?&]id=([a-zA-Z0-9_-]+)|file\/d\/([a-zA-Z0-9_-]+)/);
@@ -344,7 +343,6 @@
             }
             
             // --- Update Page 2 Content ---
-            // FIX 2: Corrected data mapping to elements
             function updateProblemContent(rowIndex) {
                 const data = sheetData[rowIndex];
                 if (!data) return;
@@ -398,7 +396,6 @@
                     q5: document.getElementById('answer5').value.trim() || '-',
                 };
                 
-                // FIX 3: Corrected syntax in template literal
                 const summaryMessage = `📝 สรุปผลการตอบแบบสอบถาม
 -------------------------
 ผู้ตอบ: ${participantName}
@@ -423,21 +420,28 @@ User ID: ${lineUserId}
 ขอบคุณที่ร่วมตอบแบบสอบถาม`;
 
                 try {
-                    // ส่งข้อความกลับไปในแชทและปิดหน้าต่าง LIFF
+                    // NEW: ตรวจสอบว่าเปิดในแอป LINE หรือเบราว์เซอร์ภายนอก
                     if (liff.isInClient()) {
-                        await liff.sendMessages([{
-                            type: 'text',
-                            text: summaryMessage
-                        }]);
+                        // ถ้าอยู่ในแอป LINE: ส่งข้อความกลับไปที่แชทเดิมและปิด LIFF
+                        await liff.sendMessages([{ type: 'text', text: summaryMessage }]);
                         liff.closeWindow();
                     } else {
-                        // กรณีทดสอบใน Browser ปกติ
-                        alert("ส่งข้อมูลสำเร็จ (โหมดทดสอบนอกแอป LINE)");
-                        console.log(summaryMessage);
+                        // ถ้าอยู่ในเบราว์เซอร์: ใช้ Share Target Picker ให้ผู้ใช้เลือกแชทที่จะส่ง
+                        if (liff.isApiAvailable('shareTargetPicker')) {
+                            await liff.shareTargetPicker([{ type: 'text', text: summaryMessage }]);
+                            alert('ส่งข้อมูลสำเร็จ! กรุณาตรวจสอบข้อความที่คุณแชร์ใน LINE');
+                        } else {
+                            // Fallback กรณีที่ browser ไม่รองรับ shareTargetPicker
+                            alert('เบราว์เซอร์ของคุณไม่รองรับฟีเจอร์นี้ โปรดคัดลอกข้อความและส่งด้วยตนเอง');
+                            console.log(summaryMessage);
+                        }
                     }
                 } catch (error) {
-                    console.error('Error sending message:', error);
-                    alert('เกิดข้อผิดพลาดในการส่งข้อความกลับไปยัง LINE');
+                    console.error('Error sending or sharing message:', error);
+                    // ตรวจสอบ error code '8' หมายถึงผู้ใช้กดยกเลิกหน้าต่าง share
+                    if (error.code !== 8) {
+                        alert('เกิดข้อผิดพลาดในการส่งข้อความกลับไปยัง LINE');
+                    }
                 }
             });
         }
