@@ -247,6 +247,8 @@
                     <button type="button" id="backButton" class="btn btn-back">← กลับ</button>
                     <div class="problem-statement">
                         <h3>โจทย์ปัญหา</h3>
+                        <!-- FIX 1: Added h4 element for the lesson/problem set -->
+                        <h4 id="problem-lesson" style="font-weight: 500; margin-bottom: 1rem; color: #374151;"></h4>
                         <p id="problem-description"></p>
                         <div class="image-gallery">
                             <div><img id="image1" src="" alt="ภาพที่ 1"><p id="image1-caption" class="image-caption"></p></div>
@@ -306,14 +308,8 @@
             // --- Helper Function for Google Drive Links (UPDATED) ---
             function convertGoogleDriveLink(url) {
                 if (!url || !url.includes('drive.google.com')) { return 'https://placehold.co/800x400/ccc/333?text=Image+Not+Found'; }
-                
-                // Regex นี้จะดึง File ID จาก URL แชร์ของ Google Drive รูปแบบต่างๆ
                 const match = url.match(/drive\.google\.com.*[?&]id=([a-zA-Z0-9_-]+)|file\/d\/([a-zA-Z0-9_-]+)/);
                 const fileId = match ? (match[1] || match[2]) : null;
-                
-                // การใช้ 'lh3.googleusercontent.com' เป็นวิธีที่เสถียรกว่าสำหรับการแสดงภาพโดยตรง
-                // จะช่วยหลีกเลี่ยงหน้าแจ้งเตือนหรือหน้าที่คั่นกลางต่างๆ ที่อาจเกิดขึ้น
-                // สำคัญ: ไฟล์รูปภาพใน Google Drive ต้องตั้งค่าการแชร์เป็น "ทุกคนที่มีลิงก์"
                 return fileId ? `https://lh3.googleusercontent.com/d/${fileId}` : 'https://placehold.co/800x400/ccc/333?text=Invalid+Link';
             }
 
@@ -327,7 +323,7 @@
                 sheetData = rows.map(row => ({
                     A: row.c[0]?.v || '', B: row.c[1]?.v || '', C: row.c[2]?.v || '', D: row.c[3]?.v || '',
                     E: row.c[4]?.v || '', F: row.c[5]?.v || '', G: row.c[6]?.v || '', H: row.c[7]?.v || '',
-                    I: row.c[8]?.v || '', J: row.c[9]?.v || '', K: row.c[10]?.v || '', L: row.c[11]?.v || '', M: row.c[12]?.v || '',N: row.c[13]?.v || '',
+                    I: row.c[8]?.v || '', J: row.c[9]?.v || '', K: row.c[10]?.v || '', L: row.c[11]?.v || '', M: row.c[12]?.v || '', N: row.c[13]?.v || '',
                 }));
 
                 sheetData.forEach((row, index) => {
@@ -348,6 +344,7 @@
             }
             
             // --- Update Page 2 Content ---
+            // FIX 2: Corrected data mapping to elements
             function updateProblemContent(rowIndex) {
                 const data = sheetData[rowIndex];
                 if (!data) return;
@@ -358,12 +355,12 @@
                 document.getElementById('image2').src = convertGoogleDriveLink(data.F);
                 document.getElementById('image2-caption').textContent = data.G;
                 document.getElementById('image3').src = convertGoogleDriveLink(data.H);
-                document.getElementById('image3-caption').textContent = data.H;
-                document.getElementById('question1-label').textContent = data.I;
-                document.getElementById('question2-label').textContent = data.J;
-                document.getElementById('question3-label').textContent = data.K;
-                document.getElementById('question4-label').textContent = data.L;
-                document.getElementById('question5-label').textContent = data.M;
+                document.getElementById('image3-caption').textContent = data.I;
+                document.getElementById('question1-label').textContent = data.J;
+                document.getElementById('question2-label').textContent = data.K;
+                document.getElementById('question3-label').textContent = data.L;
+                document.getElementById('question4-label').textContent = data.M;
+                document.getElementById('question5-label').textContent = data.N;
             }
 
             // --- Event Listeners ---
@@ -401,13 +398,12 @@
                     q5: document.getElementById('answer5').value.trim() || '-',
                 };
                 
-                // จัดรูปแบบข้อความที่จะส่งกลับ
+                // FIX 3: Corrected syntax in template literal
                 const summaryMessage = `📝 สรุปผลการตอบแบบสอบถาม
 -------------------------
 ผู้ตอบ: ${participantName}
 User ID: ${lineUserId}
 คำถามชุดที่: ${document.getElementById('problem-lesson').textContent}
-
 -------------------------
 1. ${document.getElementById('question1-label').textContent}
 คำตอบ: ${answers.q1}
