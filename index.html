@@ -281,14 +281,14 @@
             const participantSection = document.getElementById('participantSection');
 
             // --- LIFF & Data ---
-            const LIFF_ID = '2008056238-g8p1R13n'; // 🚨🚨🚨 กรุณาใส่ LIFF ID ของคุณที่นี่!
+            const LIFF_ID = '2008056238-g8p1R13n'; // LIFF ID ของคุณ
             let lineUserId = ''; // ตัวแปรสำหรับเก็บ User ID (UUID)
             const SHEET_ID = '1Z6gOqbIsXFHnX0BC-AatHfG44LkMUVN-foktbeiSJvg';
             const SHEET_GID = '0';
             const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
             let sheetData = [];
 
-            // --- 2. Initialize LIFF ---
+            // --- Initialize LIFF ---
             try {
                 await liff.init({ liffId: LIFF_ID });
                 if (!liff.isLoggedIn()) {
@@ -296,19 +296,25 @@
                     return; // หยุดการทำงานรอจนกว่าจะ login เสร็จ
                 }
                 const profile = await liff.getProfile();
-                lineUserId = profile.userId; // 3. เก็บ User ID
+                lineUserId = profile.userId; // เก็บ User ID
             } catch (error) {
                 console.error('LIFF initialization failed', error);
                 loader.innerHTML = '<p style="color: red; text-align: center;">เกิดข้อผิดพลาดในการเชื่อมต่อกับ LINE<br>กรุณาเปิดลิงก์นี้ในแอป LINE</p>';
                 return;
             }
 
-            // --- Helper Function for Google Drive Links ---
+            // --- Helper Function for Google Drive Links (UPDATED) ---
             function convertGoogleDriveLink(url) {
                 if (!url || !url.includes('drive.google.com')) { return 'https://placehold.co/800x400/ccc/333?text=Image+Not+Found'; }
+                
+                // Regex นี้จะดึง File ID จาก URL แชร์ของ Google Drive รูปแบบต่างๆ
                 const match = url.match(/drive\.google\.com.*[?&]id=([a-zA-Z0-9_-]+)|file\/d\/([a-zA-Z0-9_-]+)/);
                 const fileId = match ? (match[1] || match[2]) : null;
-                return fileId ? `https://drive.google.com/uc?export=view&id=${fileId}` : 'https://placehold.co/800x400/ccc/333?text=Invalid+Link';
+                
+                // การใช้ 'lh3.googleusercontent.com' เป็นวิธีที่เสถียรกว่าสำหรับการแสดงภาพโดยตรง
+                // จะช่วยหลีกเลี่ยงหน้าแจ้งเตือนหรือหน้าที่คั่นกลางต่างๆ ที่อาจเกิดขึ้น
+                // สำคัญ: ไฟล์รูปภาพใน Google Drive ต้องตั้งค่าการแชร์เป็น "ทุกคนที่มีลิงก์"
+                return fileId ? `https://lh3.googleusercontent.com/d/${fileId}` : 'https://placehold.co/800x400/ccc/333?text=Invalid+Link';
             }
 
             // --- Fetch and Process Google Sheet Data ---
@@ -379,7 +385,7 @@
                 window.scrollTo(0, 0);
             });
             
-            // --- 4. Modify Form Submission Logic ---
+            // --- Form Submission Logic ---
             form.addEventListener('submit', async function(event) {
                 event.preventDefault();
 
@@ -442,3 +448,4 @@ User ID: ${lineUserId}
     </script>
 </body>
 </html>
+
