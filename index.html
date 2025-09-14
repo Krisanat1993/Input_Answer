@@ -325,7 +325,7 @@
                 const rows = json.table.rows;
 
                 sheetData = rows.map(row => ({
-                    A: row.c[0]?.v || '', B: row.c[1]?.v || '', C: row.c[2]?.v || '', D: row.c[3]?.v || '',
+                    A: row.c[0]?.v || '', N: row.c[13]?.v || '', C: row.c[2]?.v || '', D: row.c[3]?.v || '',
                     E: row.c[4]?.v || '', F: row.c[5]?.v || '', G: row.c[6]?.v || '', H: row.c[7]?.v || '',
                     I: row.c[8]?.v || '', J: row.c[9]?.v || '', K: row.c[10]?.v || '', L: row.c[11]?.v || '', M: row.c[12]?.v || '',
                 }));
@@ -351,18 +351,18 @@
             function updateProblemContent(rowIndex) {
                 const data = sheetData[rowIndex];
                 if (!data) return;
-                document.getElementById('problem-description').textContent = data.B;
-                document.getElementById('image1').src = convertGoogleDriveLink(data.C);
-                document.getElementById('image1-caption').textContent = data.D;
-                document.getElementById('image2').src = convertGoogleDriveLink(data.E);
-                document.getElementById('image2-caption').textContent = data.F;
-                document.getElementById('image3').src = convertGoogleDriveLink(data.G);
-                document.getElementById('image3-caption').textContent = data.H;
-                document.getElementById('question1-label').textContent = data.I;
-                document.getElementById('question2-label').textContent = data.J;
-                document.getElementById('question3-label').textContent = data.K;
-                document.getElementById('question4-label').textContent = data.L;
-                document.getElementById('question5-label').textContent = data.M;
+                document.getElementById('problem-description').textContent = data.C;
+                document.getElementById('image1').src = convertGoogleDriveLink(data.D);
+                document.getElementById('image1-caption').textContent = data.E;
+                document.getElementById('image2').src = convertGoogleDriveLink(data.F);
+                document.getElementById('image2-caption').textContent = data.G;
+                document.getElementById('image3').src = convertGoogleDriveLink(data.H);
+                document.getElementById('image3-caption').textContent = data.I;
+                document.getElementById('question1-label').textContent = data.J;
+                document.getElementById('question2-label').textContent = data.K;
+                document.getElementById('question3-label').textContent = data.L;
+                document.getElementById('question4-label').textContent = data.M;
+                document.getElementById('question5-label').textContent = data.N;
             }
 
             // --- Event Listeners ---
